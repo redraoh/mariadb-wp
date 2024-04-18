@@ -1,0 +1,98 @@
+apiVersion: apps/v1             # 매니페스트 버전
+kind: Deployment                # 매니페스트 파일 종류
+metadata:                       # k8s 객체 식별 정보
+  name: mariadb-dply
+spec:                           # k8s 객체 설정
+  replicas: 1                   # 복제계수
+  selector:                     # 디플로이먼트가 관리할 객체 이름
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      name: mariadb
+      labels:
+        app: mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:10.6.17-focal
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              value: {{ .Values.mariadb.auth.rootpasswd }}
+            - name: MARIADB_DATABASE
+              value: {{ .Values.mariadb.auth.databasename }}
+            - name: MARIADB_USER
+              value: {{ .Values.mariadb.auth.userid }}
+            - name: MARIADB_PASSWORD
+              value: {{ .Values.mariadb.auth.userpasswd }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-dply
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      name: wordpress
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: wordpress
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mariadb
+            - name: WORDPRESS_DB_USER
+              value: {{ .Values.wordpress.mariadb.userid }}
+            - name: WORDPRESS_DB_NAME
+              value: {{ .Values.wordpress.mariadb.database }}
+            - name: WORDPRESS_DB_PASSWORD
+              value: {{ .Values.wordpress.mariadb.passwd }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-config
+data:
+  - name: MARIADB_USER
+    value: {{ .Values.configmap.mariadb.MARIADB_USER }}
+  - name: MARIADB_DATABASE
+    value: {{ .Values.configmap.mariadb.MARIADB_USER }}
+  - name: WORDPRESS_DB_HOST
+    value: {{ .Values.configmap.mariadb.MARIADB_USER }}
+  - name: WORDPRESS_DB_NAME
+    value: {{ .Values.configmap.mariadb.MARIADB_USER }}
+  - name: WORDPRESS_DB_USER
+    value: {{ .Values.configmap.mariadb.MARIADB_USER }}
+
+
+
+  # kv format
+  #MARIADB_ROOT_PASSWORD: "abc123!"
+  MARIADB_USER: {{ .Values.configmap.mariadb.MARIADB_USER }}
+  MARIADB_DATABASE: "wp"
+  WORDPRESS_DB_HOST: "mariadb"
+  WORDPRESS_DB_NAME: "wp"
+  WORDPRESS_DB_USER: "wpuser" # "wpuser" in base64
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-secret
+type: Opaque
+data:
+  MARIADB_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64
+  MARIADB_ROOT_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64
+  WORDPRESS_DB_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64

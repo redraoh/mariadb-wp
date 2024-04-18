@@ -1,0 +1,28 @@
+mariadb:
+  auth:
+    rootpasswd: "abc123!"
+    databasename: "wp"
+    userid: "wpuser"
+    userpasswd: "987xyz!"
+wordpress:
+  mariadb:
+    host: mariadb10
+    database: wp
+    userid: wpuser
+    passwd: 987xyz!
+
+configmap:
+  mariadb:
+    MARIADB_USER: "wpuser" # "wpuser" in base64
+    MARIADB_DATABASE: "wp"
+  wordpress:
+    WORDPRESS_DB_HOST: "mariadb"
+    WORDPRESS_DB_NAME: "wp"
+    WORDPRESS_DB_USER: "wpuser" # "wpuser" in base64
+
+secret:
+  mariadb:
+    MARIADB_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64
+    MARIADB_ROOT_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64
+  wordpress:
+    WORDPRESS_DB_PASSWORD: YWJjMTIzIQ== # "abc123!" in base64
